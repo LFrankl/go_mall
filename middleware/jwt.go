@@ -9,6 +9,13 @@ import (
 	"time"
 )
 
+/*
+在我的逻辑中，每次触发登录操作，都会加一个jwts记录
+理论上用户只能退出后再登录，所以能保证一直都只有一个记录
+但是如果api地址被人用脚本恶意重复登录，这样jwts表会不会爆炸？
+
+*/
+
 type CustomClaims struct {
 	Username string `json:"username"`
 	UserId   int64  `json:"userId"`
@@ -32,6 +39,8 @@ func GenToken(username string, userId int64) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	models.DB.Where("token = ?", token).Unscoped().Delete(&models.Jwts{})
 	//使用指定的secret签名并获得完整编码后的字符串token
 	//token写入数据库
 	j := models.Jwts{Token: token, Expire: expire}

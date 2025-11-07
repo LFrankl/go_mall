@@ -43,11 +43,11 @@ func InitRouter() *gin.Engine {
 	auth := apiv1.Group("")
 	{
 		//用户注册登录
-		auth.POST("shopper/login/", v1.ShopperLogin)
+		auth.POST("auth/login/", v1.ShopperLogin)
 		//退出登录
-		auth.POST("shopper/logout/", v1.ShopperLogout)
+		auth.POST("auth/logout/", v1.ShopperLogout)
 		//用户注销
-		auth.POST("shopper/logout/", v1.ShopperLogout)
+		auth.POST("auth/cancel/", v1.ShopperCancel)
 	}
 
 	shopper := apiv1.Group("", middleware.JWTAuthMiddleware)
