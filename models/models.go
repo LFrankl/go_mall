@@ -49,6 +49,17 @@ type Carts struct {
 	Users       Users       `json:"-" gorm:"foreignKey:UserId"`
 }
 
+//type Order struct {
+//	ID          uint      `gorm:"primaryKey" json:"id"`
+//	UserID      uint      `gorm:"not null" json:"user_id"`                        // 下单用户ID
+//	CommodityID uint      `gorm:"not null" json:"commodity_id"`                   // 商品ID
+//	Quantity    int       `gorm:"not null" json:"quantity"`                       // 购买数量
+//	TotalPrice  float64   `gorm:"type:decimal(10,2);not null" json:"total_price"` // 总价
+//	Status      int       `gorm:"not null;default:0" json:"status"`               // 0-待支付 1-已支付 2-已取消
+//	CreatedAt   time.Time `json:"created_at"`
+//	UpdatedAt   time.Time `json:"updated_at"`
+//}
+
 type Orders struct {
 	gorm.Model
 	Price   string `json:"price" gorm:"type:varchar(255)"`
@@ -57,6 +68,16 @@ type Orders struct {
 
 	Users Users `json:"-" gorm:"foreignKey:UserId"`
 	State int64 `json:"state" `
+}
+
+// OrderItem 订单项表（单数结构体）
+type OrderItem struct {
+	gorm.Model
+	OrderID     uint        `json:"order_id" gorm:"foreignKey:OrderID;references:ID"` // 关联 Orders.ID
+	CommodityID uint        `json:"commodity_id"`
+	Quantity    int64       `json:"quantity"`
+	UnitPrice   float64     `json:"unit_price"`
+	Commodity   Commodities `gorm:"foreignKey:CommodityID"`
 }
 
 type Records struct {

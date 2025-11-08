@@ -93,9 +93,8 @@ func ShopperLogout(c *gin.Context) {
 	if userId != 0 {
 		authHeader := c.Request.Header.Get("Authorization")
 		if authHeader != "" {
-			var jwts models.Jwts
-			models.DB.Where("token = ?", authHeader).First(&jwts)
-			models.DB.Where("token = ?", authHeader).Unscoped().Delete(&jwts)
+
+			models.DB.Where("token = ?", authHeader).Unscoped().Delete(&models.Jwts{})
 			context["state"] = "success"
 			context["msg"] = "退出成功"
 		}

@@ -1,1 +1,5 @@
 package consumer
+
+func main() {
+
+}
