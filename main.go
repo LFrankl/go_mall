@@ -1,6 +1,7 @@
 package main
 
 import (
+	"baby/middleware/log"
 	"baby/models"
 	"baby/rabbitmq"
 	"baby/routers"
@@ -11,8 +12,7 @@ import (
 
 var cli *rabbitmq.Client
 
-func init() {
-
+func initRabbitMQ() {
 	fmt.Println("rabbitmq init")
 
 	err := models.Setup()
@@ -24,7 +24,9 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	err = cli.DeclareOrderExchangeQueue()
+	err = cli.DeclareExchangeQueue(rabbitmq.LogExchangeName,
+		rabbitmq.LogOfRequestQueueName,
+		rabbitmq.LogOfRequestRoutingKey)
 	if err != nil {
 		panic(err)
 	}
@@ -32,20 +34,12 @@ func init() {
 	fmt.Println("rabbitmq init success")
 }
 
+func init() {
+	initRabbitMQ()
+	log.RegisterCli(cli)
+}
+
 func main() {
-
-	msg := models.LoginLogMessage{
-		OrderID:     999,
-		UserID:      998,
-		CommodityID: 3432,
-		Quantity:    9999,
-		Price:       9.9,
-	}
-
-	errr := cli.PublishOrder(msg)
-	if errr != nil {
-		panic(errr)
-	}
 
 	server := &http.Server{
 		Addr:         ":8080",

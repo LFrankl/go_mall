@@ -2,6 +2,7 @@ package routers
 
 import (
 	"baby/middleware"
+	"baby/middleware/log"
 	v1 "baby/servers/v1"
 	"baby/settings"
 	"github.com/gin-contrib/cors"
@@ -26,6 +27,7 @@ func InitRouter() *gin.Engine {
 	config.AllowHeaders = []string{"tus-resumable", "upload-length", "upload-metadata", "cache-control", "x-requested-with", "*"}
 
 	r.Use(cors.New(config))
+	r.Use(log.LogFunc)
 
 	apiv1 := r.Group("/api/v1/")
 

@@ -3,7 +3,6 @@ package main
 import (
 	"baby/rabbitmq"
 	"fmt"
-	"github.com/rabbitmq/amqp091-go"
 )
 
 /*
@@ -18,11 +17,6 @@ DeclareOrderExchangeQueue()
 ......等
 
 */
-
-type Client struct {
-	conn    *amqp091.Connection
-	channel *amqp091.Channel
-}
 
 var cli *rabbitmq.Client
 
@@ -40,12 +34,15 @@ func init() {
 
 func main() {
 
-	err := cli.DeclareOrderExchangeQueue()
+	err := cli.DeclareExchangeQueue(rabbitmq.LogExchangeName,
+		rabbitmq.LogOfRequestQueueName,
+		rabbitmq.LogOfRequestRoutingKey,
+	)
 	if err != nil {
 		panic(err)
 	}
 
-	msgs, err := cli.ConsumeOrder()
+	msgs, err := cli.Consume(rabbitmq.LogOfRequestQueueName, "consumer_1")
 	if err != nil {
 		panic(err)
 	}
@@ -53,7 +50,10 @@ func main() {
 	for msg := range msgs {
 		// msg 是 amqp091.Delivery 类型
 		fmt.Printf("收到消息：路由键=%s，内容=%s\n", msg.RoutingKey, string(msg.Body))
-
+		err := msg.Ack(false)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 }

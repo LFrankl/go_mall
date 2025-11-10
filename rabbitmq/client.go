@@ -1,8 +1,6 @@
 package rabbitmq
 
 import (
-	"baby/models"
-	"github.com/goccy/go-json"
 	"github.com/rabbitmq/amqp091-go"
 	"time"
 )
@@ -11,6 +9,10 @@ const (
 	OrderExchangeName = "order.exchange" // 订单交换机
 	OrderQueueName    = "order.queue"    // 订单队列
 	OrderRoutingKey   = "order.routing"  // 路由键
+
+	LogExchangeName        = "log.exchange" // 日志交换机，内部对应多个队列和路由键
+	LogOfRequestQueueName  = "log.queue"
+	LogOfRequestRoutingKey = "log.routing"
 )
 
 type Client struct {
@@ -34,27 +36,29 @@ func NewClient(addr, user, pass string) (*Client, error) {
 	return &Client{conn: conn, channel: ch}, nil
 }
 
-// DeclareOrderExchangeQueue 声明订单相关的交换机和队列（direct 类型，确保消息可靠投递）
-func (c *Client) DeclareOrderExchangeQueue() error {
+// DeclareExchangeQueue 声明订单相关的交换机和队列（direct 类型，确保消息可靠投递）
+func (c *Client) DeclareExchangeQueue(exchangeName string,
+	queueName string,
+	routeKey string) error {
 	// 声明交换机（持久化）
 	if err := c.channel.ExchangeDeclare(
-		OrderExchangeName,
+		exchangeName,
 		amqp091.ExchangeDirect, // 直接交换机，精确匹配路由键
-		true,                   // 持久化
-		false,                  // 不自动删除
-		false,                  // 非排他
-		false,                  // 非阻塞
+		true,
+		false,
+		false,
+		false,
 		nil,
 	); err != nil {
 		return err
 	}
 
-	// 声明队列（持久化，避免消息丢失）
+	// 声明队列
 	_, err := c.channel.QueueDeclare(
-		OrderQueueName,
-		true,  // 持久化队列
-		false, // 不自动删除
-		false, // 非排他
+		queueName,
+		true,
+		false,
+		false,
 		false,
 		nil,
 	)
@@ -64,45 +68,51 @@ func (c *Client) DeclareOrderExchangeQueue() error {
 
 	// 绑定队列到交换机（指定路由键）
 	return c.channel.QueueBind(
-		OrderQueueName,
-		OrderRoutingKey,
-		OrderExchangeName,
+		queueName,
+		routeKey,
+		exchangeName,
 		false,
 		nil,
 	)
 }
 
-// PublishOrder 发送订单消息（持久化消息）
-func (c *Client) PublishOrder(msg models.LoginLogMessage) error {
-	data, err := json.Marshal(msg)
-	if err != nil {
-		return err
-	}
+// Consume 消费消息（手动确认）
+func (c *Client) Consume(queueName string, consumerTag string) (<-chan amqp091.Delivery, error) {
+	return c.channel.Consume(
+		queueName,
+		consumerTag, // 消费者标签
+		false,       // 关闭自动确认
+		false,
+		false,
+		false,
+		nil,
+	)
+}
 
+/*
+	LogExchangeName        = "log.exchange" // 日志交换机，内部对应多个队列和路由键
+	LogOfRequestQueueName  = "log.queue"
+	LogOfRequestRoutingKey = "log.routing"
+*/
+//Publish 发送消息，持久化
+func (c *Client) Publish(msg []byte, exChange string, routeKey string) error {
+	/*
+		传参的时候传入确定类型，和一个字节流
+		然后根据类型，确定要发到哪个管道
+		交换机 + 路由键
+
+	*/
 	return c.channel.Publish(
-		OrderExchangeName,
-		OrderRoutingKey,
-		false, // 非 mandatory
-		false, // 非 immediate
+		exChange,
+		routeKey,
+		false,
+		false,
 		amqp091.Publishing{
 			ContentType:  "application/json",
-			Body:         data,
-			DeliveryMode: amqp091.Persistent, // 持久化消息（避免 RabbitMQ 重启丢失）
+			Body:         msg,
+			DeliveryMode: amqp091.Persistent,
 			Timestamp:    time.Now(),
 		},
-	)
-}
-
-// ConsumeOrder 消费订单消息（手动确认）
-func (c *Client) ConsumeOrder() (<-chan amqp091.Delivery, error) {
-	return c.channel.Consume(
-		OrderQueueName,
-		"order_consumer", // 消费者标签
-		false,            // 关闭自动确认（手动确认确保任务完成）
-		false,
-		false,
-		false,
-		nil,
 	)
 }
 
