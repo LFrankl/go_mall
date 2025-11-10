@@ -19,12 +19,9 @@ func RegisterCli(c *rabbitmq.Client) {
 //外部注册全局client实例
 
 func LogFunc(c *gin.Context) {
-
 	startTime := time.Now()
-
 	//endTime := time.Now()
 	//costTime := endTime.Sub(startTime)
-
 	logData := map[string]interface{}{
 		"path":   c.FullPath(),     // 请求路径
 		"method": c.Request.Method, // 请求方法
@@ -50,5 +47,4 @@ func LogFunc(c *gin.Context) {
 		// }
 	}(logData)
 	c.Next()
-
 }
